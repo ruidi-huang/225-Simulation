@@ -9,11 +9,11 @@
                       :title "in your home"
                       :dir {:west :bar, :east :restaurant}
                       :content #{:bed}},
-               :restaurant {:desc "This is a restaurant on green street. You can eat here to increase your food point. You can also order take-out to put food in your backpack so that you can eat it later.",
+               :restaurant {:desc "This is a restaurant on green street. You can eat here to increase your food point.",
                             :title "in the restaurant",
                             :dir {:south :altgeld, :west :home, :east :grainger},
                             :content #{:food :take-out}},
-               :altgeld {:desc "This is Altgeld Hall. The legends says that there is a mysterious Dairy Queen down in the basement of Altgeld. If you find it, you can get an Illini Blizzard to restore all points.",
+               :altgeld {:desc "This is Altgeld Hall. The legends says that there is a mysterious Dairy Queen down in the basement of Altgeld. If you find it, you will automically win, otherwise you'll lose.",
                          :title "in Altgeld Hall",
                          :dir {:north :restaurant, :east :starbucks},
                          :content #{:possibly-existed-Dairy-Queen}},
@@ -21,11 +21,11 @@
                            :title "in Starbucks"
                            :dir {:north :grainger, :west :altgeld}
                            :content #{:coffee}},
-               :grainger {:desc "This is Grainger Library. You can fetch, work on, and push your MP and take your exam"
+               :grainger {:desc "This is Grainger Library. You can fetch, work on, and push your MP and take your exam here"
                           :title "in Grainger Library"
                           :dir {:north :digital, :west :restaurant, :south :starbucks, :east :isr}
                           :content #{:linuxMachine, :cbtf}},
-               :isr {:desc "This is ISR dining hall You can eat here and restore your food point and release your pressure."
+               :isr {:desc "This is ISR dining hall. You can eat here and restore your food point and restore your wellness."
                      :title "in ISR"
                      :dir {:west :grainger}
                      :content #{:dining}},
@@ -33,11 +33,11 @@
                          :title "in Digital Lab"
                          :dir {:north :siebel, :south :grainger}
                          :content #{:linuxMachine}},
-               :siebel {:desc "This is Siebel Center for Computer Science. You can attend the honors lecture taught by Prof. Beckman here."
+               :siebel {:desc "This is Siebel Center for Computer Science. You can attend the honors lecture taught by Prof. Beckman, talk to him, and work on your honors project here."
                         :title "in Siebel Center"
                         :dir {:north :eceb, :south :digital}
                         :content #{:beckman}},
-               :eceb {:desc "This is ECE Building. You can attend the lecture taught by Prof. Evans."
+               :eceb {:desc "This is ECE Building. You can attend the lecture taught by Prof. Evans and talk to him."
                       :title "in ECEB"
                       :dir {:south :siebel}
                       :content #{:evans}}})
@@ -56,9 +56,6 @@
            "Siebel Center" ["ECE Building" "Digital Lab" "Empty" "Empty"],
            "ECE Building" ["Empty" "Siebel Center" "Empty" "Empty"]})
 (def uiuc-size (count uiuc))
-
-(defn vector-has [v elt]
-  (some #{elt} v))
 
 (defn rand-unique
   "Pick a random number from 0 to `max-1` that is not in the set `exclude`.  Does not check for errors."
@@ -98,6 +95,27 @@
       (println (-> the-map loc :desc)))
     (assoc-in state [:student :seen] (conj visited #{loc}))))
 
+(defn health [state]
+  (let [pre (get-in state [:student :pressure])
+        wel (get-in state [:student :wellness])
+        pro (get-in state [:student :progress])
+        foo (get-in state [:student :food])
+        enr (get-in state [:student :energy])
+        und (get-in state [:student :understanding])
+        num (get-in state [:student :inventory :mp])
+        hor-und (get-in state [:student :honors :understanding])
+        hor-proj (get-in state [:student :honors :project])]
+    (println "Your condition: ")
+    (println "        Welness:" wel)
+    (println "        Progress:" pro)
+    (println "        Food Point:" foo)
+    (println "        Energy:" enr)
+    (println "        understanding:" und)
+    (println "        Pressure:" pre)
+    (println "        MP degree of completion:" num)
+    (println "        honors understanding:" hor-und)
+    (println "        Honors Project degree of completion:" hor-proj)))
+
 (defn building [state]
   (let [loc (get-in state [:student :location])
         pre (get-in state [:student :pressure])
@@ -111,28 +129,33 @@
           (do (println "You can [D]rink or [P]arty to reduce pressure. Or [L]eave")
               (let [choice (read-line)]
                 (cond (= choice "D")
-                      (do (println "You chose to drink")
-                          (assoc-in state [:student :pressure] (- pre 50))
-                          (assoc-in state [:student :wellness] (- wel 30)))
+                      (do (println "You chose to drink. Pressure - 50. Wellness - 40.")
+                          (-> state
+                              (assoc-in [:student :pressure] (- pre 50))
+                              (assoc-in [:student :wellness] (- wel 40))))
                       (= choice "P")
-                      (do (println "You chose to party")
-                          (assoc-in state [:student :pressure] (- pre 5)))
+                      (do (println "You chose to party. Pressure - 20. Energy - 10")
+                          (-> state
+                              (assoc-in [:student :pressure] (- pre 20))
+                              (assoc-in [:student :energy] (- enr 10))))
                       (= choice "L")
                       (do (println "You left examining") state))))
           (= loc :home)
-          (do (println "You can [S]leep to increase energy. Or [L]eave")
+          (do (println "You can [S]leep to increase energy to maximum and reduce food point to 0. Or [L]eave")
               (let [choice (read-line)]
                 (cond (= choice "S")
-                      (do (println "You chose to sleep")
-                          (assoc-in state [:student :energy] 100))
+                      (do (println "You chose to sleep. Energy: 100. Food: 0.")
+                          (-> state
+                              (assoc-in [:student :energy] 100)
+                              (assoc-in [:student :food] 0)))
                       (= choice "L")
                       (do (println "You left examining") state))))
           (= loc :restaurant)
           (do (println "You can [E]at to increase your food point. Or [L]eave")
               (let [choice (read-line)]
                 (cond (= choice "E")
-                      (do (println "You chose to eat. Food point + 50")
-                          (assoc-in state [:student :food] (+ foo 50)))
+                      (do (println "You chose to eat. Food point + 20")
+                          (assoc-in state [:student :food] (+ foo 20)))
                       (= choice "L")
                       (do (println "You left examining") state))))
           (= loc :altgeld)
@@ -141,7 +164,8 @@
                     chance (rand-int 2)]
                 (cond (= choice "F")
                       (do (println "You chose to look for DQ")
-                          (if (= chance 1) (do (println "CONGRATS! You found the Altgeld DQ!") (assoc-in state [:student :win] 1)) (do (println "Oops! You did not find the Altgeld DQ") (assoc-in state [:student :win] -1))))
+                          (cond (= chance 1) (do (println "CONGRATS! You found the Altgeld DQ!") (assoc-in state [:student :win] 1))
+                                :else (do (println "Oops! You did not find the Altgeld DQ") (assoc-in state [:student :win] -1))))
                       (= choice "L")
                       (do (println "You left examining") state))))
           (= loc :starbucks)
@@ -149,58 +173,70 @@
               (let [choice (read-line)]
                 (cond (= choice "D")
                       (do (println "You chose to drink coffee. Energy + 10, Wellness - 5")
-                          (assoc-in state [:student :energy] (+ enr 10))
-                          (assoc-in state [:student :wellness] (- wel 5)))
+                          (-> state
+                              (assoc-in [:student :energy] (+ enr 10))
+                              (assoc-in [:student :wellness] (- wel 5))))
                       (= choice "L")
                       (do (println "You left examining") state))))
           (= loc :grainger)
           (do (println "You can [F]etch your MP, [W]ork on the MP, [P]ush your MP, or [T]ake the exam. Or [L]eave")
               (let [choice (read-line)]
                 (cond (= choice "F")
-                      (if (= num 0) (do (println "You chose to fetch your MP")
-                                        (assoc-in state [:student :inventory :mp] 1)) (do (println "You have already fetched your MP!") state))
+                      (cond (= num 0) (do (println "You chose to fetch your MP")
+                                          (println "You have successfully fetched your MP")
+                                          (assoc-in state [:student :inventory :mp] 1))
+                            :else (do (println "You have already fetched your MP!") state))
                       (= choice "W")
-                      (if (> num 0) (do (println "You chose to work on the MP!")
-                                        (assoc-in state [:student :inventory :mp] (- (+ (get-in state [:student :inventory :mp]) (/ und 10) (/ enr 10) (/ foo 10) (/ wel 5)) (/ pre 5)))
-                                        (println "You completed " (-> state :student :inventory :mp) "% of the MP") state)
-                          (do (println "You have to fetch your MP first!") state))
-                      (= choice "P") (if (> num 0) (do (println "You chose to push the MP!")
-                                                       (assoc-in state [:student :mp-score] (-> state :student :inventory :mp))
-                                                       (println "you got a " (-> state :student :mp-score) " for the MP!")
-                                                       (assoc-in state [:student :progress] (+ 50 pro)))
-                                         (do (println "You have to fetch your MP first!") state))
+                      (cond (> num 0) (do (println "You chose to work on the MP!")
+                                          (println "You before have completed " (-> state :student :inventory :mp) "% of the MP")
+                                          (assoc-in state [:student :inventory :mp] (- (+ (get-in state [:student :inventory :mp]) (/ und 10) (/ enr 10) (/ foo 10) (/ wel 5)) (/ pre 5)))
+                                          ;; (if (> (get-in state [:student :inventory :mp]) 100) (assoc-in state [:student :inventory :mp] 100) ())
+                                          )
+                            :else (do (println "You have to fetch your MP first!") state))
+                      (= choice "P") (cond (> num 0) (do (println "You chose to push the MP!")
+                                                         (println "you got a " (-> state :student :inventory :mp) "% for the MP!")
+                                                         (-> state
+                                                             (assoc-in  [:student :mp-score] (-> state :student :inventory :mp))
+                                                             (assoc-in [:student :progress] (+ 50 pro))))
+                                           :else (do (println "You have to fetch your MP first!") state))
                       (= choice "T") (do (println "You chose to take the exam!")
-                                         (assoc-in state [:student :inventory :exam] und)
-                                         (println "You got a " und "on the exam!")
-                                         (assoc-in state [:student :progress] (+ 50 pro)))
+                                         (println "You got a " und "% on the exam!")
+                                         (-> state
+                                             (assoc-in  [:student :inventory :exam] und)
+                                             (assoc-in [:student :progress] (+ 50 pro))))
                       (= choice "L")
                       (do (println "You left examining") state))))
           (= loc :isr)
           (do (println "You can [E]at at the ISR dining hall to increase your food point and wellness. Or [L]eave")
               (let [choice (read-line)]
                 (cond (= choice "E")
-                      (do (println "You chose to eat")
-                          (assoc-in state [:student :food] (+ foo 30))
-                          (assoc-in state [:student :wellness] (+ wel 10)))
+                      (do (println "You chose to eat. Food point + 25, wellness + 10")
+                          (-> state
+                              (assoc-in [:student :food] (+ foo 30))
+                              (assoc-in [:student :wellness] (+ wel 10))))
                       (= choice "L")
                       (do (println "You left examining") state))))
           (= loc :digital)
           (do (println "You can [F]etch your MP, [W]ork on the MP, or [P]ush your MP. Or [L]eave")
               (let [choice (read-line)]
                 (cond (= choice "F")
-                      (if (= num 0) (do (println "You chose to fetch your MP")
-                                        (assoc-in state [:student :inventory :mp] 1))
-                          (do (println "You have already fetched your MP!") state))
+                      (cond (= num 0) (do (println "You chose to fetch your MP")
+                                          (println "You have successfully fetched your MP")
+                                          (assoc-in state [:student :inventory :mp] 1))
+                            :else (do (println "You have already fetched your MP!") state))
                       (= choice "W")
-                      (if (> num 0) (do (println "You chose to work on the MP!")
-                                        (assoc-in state [:student :inventory :mp] (- (+ (get-in state [:student :inventory :mp]) (/ und 10) (/ enr 10) (/ foo 10) (/ wel 5)) (/ pre 5)))
-                                        (println "You completed " (-> state :student :inventory :mp) "% of the MP") state)
-                          (do (println "You have to fetch your MP first!") state))
-                      (= choice "P") (if (> num 0) (do (println "You chose to push the MP!")
-                                                       (assoc-in state [:student :mp-score] (-> state :student :inventory :mp))
-                                                       (println "you got a " (-> state :student :mp-score) " for the MP!")
-                                                       (assoc-in state [:student :progress] (+ 50 pro)))
-                                         (do (println "You have to fetch your MP first!") state))
+                      (cond (> num 0) (do (println "You chose to work on the MP!")
+                                          (println "You before have completed " (-> state :student :inventory :mp) "% of the MP")
+                                          (assoc-in state [:student :inventory :mp] (- (+ (get-in state [:student :inventory :mp]) (/ und 10) (/ enr 10) (/ foo 10) (/ wel 5)) (/ pre 5)))
+                                          ;; (if (> (get-in state [:student :inventory :mp]) 100) (assoc-in state [:student :inventory :mp] 100) ())
+                                          )
+                            :else (do (println "You have to fetch your MP first!") state))
+                      (= choice "P") (cond (> num 0) (do (println "You chose to push the MP!")
+                                                         (println "you got a " (-> state :student :inventory :mp) "% for the MP!")
+                                                         (-> state
+                                                             (assoc-in  [:student :mp-score] (-> state :student :inventory :mp))
+                                                             (assoc-in [:student :progress] (+ 50 pro))))
+                                           :else (do (println "You have to fetch your MP first!") state))
                       (= choice "L")
                       (do (println "You left examining") state))))
           (= loc :siebel)
@@ -210,12 +246,14 @@
                     ho-proj (get-in state [:student :honors :project])]
                 (cond (= choice "A")
                       (do (println "You chose to attend the honors lecture.")
+                          (println "Clojure understanding + 25")
                           (assoc-in state [:student :honors :understanding] (+ ho-und 25)))
                       (= choice "W")
                       (do (println "You chose to work on the honors project.")
                           (assoc-in state [:student :honors :project] (+ ho-proj ho-und)))
                       (= choice "T")
                       (do (println "You chose to talk to Professor Beckman")
+                          (println "Clojure understanding + 50")
                           (assoc-in state [:student :honors :understanding] (+ ho-und 50)))
                       (= choice "L")
                       (do (println "You left examining") state))))
@@ -223,7 +261,7 @@
           (do (println "You can [A]ttend the lecture, [T]alk to Prof. Evans to increase your understanding. Or [L]eave")
               (let [choice (read-line)]
                 (cond (= choice "A")
-                      (do (println "You chose to attend the honors lecture.")
+                      (do (println "You chose to attend the lecture.")
                           (assoc-in state [:student :understanding] (+ und 25)))
                       (= choice "T")
                       (do (println "You chose to talk to Professor Evans")
@@ -247,15 +285,15 @@
                                  (do (println "You are trying to go east.")
                                      (go state :east)))))
         (= line "E") (do (println "You choose to examine") (building state))
+        (= line "C") (do (println "You choose to check your condition") (health state) state)
         (= line "Q") (do (println "Thanks for playing!") (assoc-in state [:student :win] -1))))
 
 (defn repl [state]
   (loop [state state]
-    (cond (= (get-in state [:student :progress]) 100) (println "YOU WON!")
+    (cond (= (get-in state [:student :progress]) 100) (println "YOU WON with the exam score" (get-in state [:student :inventory :exam]) ", MP score " (get-in state [:student :mp-score]) ", and honors Project score" (get-in state [:student :honors :project]))
           (= (get-in state [:student :win]) 0) (if (< (get-in state [:student :progress]) 100)
                                                  (do (status state)
-                                                     (println "You have not completed the task.")
-                                                     (println "What do you want to do? ([M]ove/[E]xamine/[Q]uit) ")
+                                                     (println "What do you want to do? ([M]ove/[E]xamine building/[C]heck your condition/[Q]uit) ")
                                                      (let [command (read-line)]
                                                        (recur (respond state command)))) (println "Game over"))
           (= (get-in state [:student :win]) 1) (println "YOU WON!")
@@ -264,7 +302,9 @@
 (defn -main
   "Initialize the CS225."
   [& args]
-  (repl init-state))
+  (println "Welcome to the game of CS225. You play as a student who is taking CS225. You need to Push your MP and take your exam in order to win the game. 
+            There are also a lot of other things to do such as go to a bar, get some food, attend lecture. 
+            All of them can infect your productivity on MP and exam score. ") (repl init-state))
 
 
 ;; (defn foo
