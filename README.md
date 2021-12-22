@@ -9,3 +9,6 @@ To play the game:
 4. You are in the game! Have fun!
 
 Feel free to reach out for anything!
+
+---
+Declaration: (This project is completely designed, created, and developed by me (Ruidi Huang) for the honors section of CS225.
