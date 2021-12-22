@@ -3,11 +3,11 @@
 
 (def init-map {:bar {:desc "This is a bar where you can relax and have fun with your friends. You can reduce some pressures in this place.",
                      :title "in the bar",
-                     :dir {:east "Home"},
+                     :dir {:east :home},
                      :contents #{:beer}},
                :home {:desc "This is your home. You can sleep here to restore your energy."
-                      :title "in your home"
-                      :dir {:west :bar, :east :restaurant}
+                      :title "in your home",
+                      :dir {:west :bar, :east :restaurant},
                       :content #{:bed}},
                :restaurant {:desc "This is a restaurant on green street. You can eat here to increase your food point.",
                             :title "in the restaurant",
@@ -17,29 +17,29 @@
                          :title "in Altgeld Hall",
                          :dir {:north :restaurant, :east :starbucks},
                          :content #{:possibly-existed-Dairy-Queen}},
-               :starbucks {:desc "This is the starbucks in the Illini Union. You can get some coffee to restore a small portion of your energy."
-                           :title "in Starbucks"
-                           :dir {:north :grainger, :west :altgeld}
+               :starbucks {:desc "This is the starbucks in the Illini Union. You can get some coffee to restore a small portion of your energy.",
+                           :title "in Starbucks",
+                           :dir {:north :grainger, :west :altgeld},
                            :content #{:coffee}},
-               :grainger {:desc "This is Grainger Library. You can fetch, work on, and push your MP and take your exam here"
-                          :title "in Grainger Library"
-                          :dir {:north :digital, :west :restaurant, :south :starbucks, :east :isr}
+               :grainger {:desc "This is Grainger Library. You can fetch, work on, and push your MP and take your exam here",
+                          :title "in Grainger Library",
+                          :dir {:north :digital, :west :restaurant, :south :starbucks, :east :isr},
                           :content #{:linuxMachine, :cbtf}},
-               :isr {:desc "This is ISR dining hall. You can eat here and restore your food point and restore your wellness."
-                     :title "in ISR"
-                     :dir {:west :grainger}
+               :isr {:desc "This is ISR dining hall. You can eat here and restore your food point and restore your wellness.",
+                     :title "in ISR",
+                     :dir {:west :grainger},
                      :content #{:dining}},
-               :digital {:desc "This is Digital Lab. You can fetch, work on, and push your MP here."
-                         :title "in Digital Lab"
-                         :dir {:north :siebel, :south :grainger}
+               :digital {:desc "This is Digital Lab. You can fetch, work on, and push your MP here.",
+                         :title "in Digital Lab",
+                         :dir {:north :siebel, :south :grainger},
                          :content #{:linuxMachine}},
-               :siebel {:desc "This is Siebel Center for Computer Science. You can attend the honors lecture taught by Prof. Beckman, talk to him, and work on your honors project here."
-                        :title "in Siebel Center"
-                        :dir {:north :eceb, :south :digital}
+               :siebel {:desc "This is Siebel Center for Computer Science. You can attend the honors lecture taught by Prof. Beckman, talk to him, and work on your honors project here.",
+                        :title "in Siebel Center",
+                        :dir {:north :eceb, :south :digital},
                         :content #{:beckman}},
-               :eceb {:desc "This is ECE Building. You can attend the lecture taught by Prof. Evans and talk to him."
-                      :title "in ECEB"
-                      :dir {:south :siebel}
+               :eceb {:desc "This is ECE Building. You can attend the lecture taught by Prof. Evans and talk to him.",
+                      :title "in ECEB",
+                      :dir {:south :siebel},
                       :content #{:evans}}})
 
 ;; north, south, west, east
@@ -83,7 +83,7 @@
   (let [loc (get-in state [:student :location])
         dest ((get-in state [:map loc :dir]) dir)]
     (if (nil? dest)
-      (do (println "You can't go that way.") state)
+      (do (println "You can't go that way. Check the map too see where you can go!") state)
       (do (println "You are going to " dest) (assoc-in state [:student :location] dest)))))
 
 (defn status [state]
@@ -91,9 +91,9 @@
         the-map (:map state)
         visited (get-in state [:student :seen])]
     (println (str "You are " (-> loc the-map :title) ". "))
-    (when-not ((get-in state [:student :seen]) loc)
+    (when-not (contains? (get-in state [:student :seen]) loc)
       (println (-> the-map loc :desc)))
-    (assoc-in state [:student :seen] (conj visited #{loc}))))
+    (assoc-in state [:student :seen] (conj visited loc))))
 
 (defn health [state]
   (let [pre (get-in state [:student :pressure])
@@ -107,7 +107,7 @@
         hor-proj (get-in state [:student :honors :project])]
     (println "Your condition: ")
     (println "        Welness:" wel)
-    (println "        Progress:" pro)
+    (println "        Progress (need to get to 100 to pass):" pro)
     (println "        Food Point:" foo)
     (println "        Energy:" enr)
     (println "        understanding:" und)
@@ -269,42 +269,66 @@
                       (= choice "L")
                       (do (println "You left examining") state)))))))
 
-(defn respond [state line]
-  (cond (= line "M") (do (println "You choose to move. Which direction? [N]orth/[S]outh/[W]est/[E]ast?")
-                         (let [choice (read-line)]
-                           (cond (= choice "N")
-                                 (do (println "you are tring to go north")
-                                     (go state :north))
-                                 (= choice "S")
-                                 (do (println "You are trying to go south.")
-                                     (go state :south))
-                                 (= choice "W")
-                                 (do (println "You are trying to go west.")
-                                     (go state :west))
-                                 (= choice "E")
-                                 (do (println "You are trying to go east.")
-                                     (go state :east)))))
-        (= line "E") (do (println "You choose to examine") (building state))
-        (= line "C") (do (println "You choose to check your condition") (health state) state)
-        (= line "Q") (do (println "Thanks for playing!") (assoc-in state [:student :win] -1))))
+(defn showmap []
+  (println "  Map:                        ")
+  (println "                  North            ")
+  (println "                    ^          ")
+  (println "                    |         ")
+  (println "         West   <--   -->    East    ")
+  (println "                    |         ")
+  (println "                    v    ")
+  (println "                   South    ")
+  (println "                       ")
+  (println "                                             ECE Building      ")
+  (println "                                             Siebel Center      ")
+  (println "                                              Digital Lab      ")
+  (println "            Bar     Home      Restaurant       Grainger      ISR   ")
+  (println "                             Altgeld Hall      Starbucks      ")
+  (println "                       ")
+  (println "                       ")
+  (println "                       "))
+
+(defn respond [state]
+  (println "What do you want to do? ([M]ove/[E]xamine building/[C]heck your condition/[V]iew the map/[Q]uit) ")
+  (let [line (read-line)] (cond (= line "M") (do (println "You choose to move. Which direction? [N]orth/[S]outh/[W]est/[E]ast?")
+                                                 (let [choice (read-line)]
+                                                   (cond (= choice "N")
+                                                         (do (println "you are tring to go north")
+                                                             (go state :north))
+                                                         (= choice "S")
+                                                         (do (println "You are trying to go south.")
+                                                             (go state :south))
+                                                         (= choice "W")
+                                                         (do (println "You are trying to go west.")
+                                                             (go state :west))
+                                                         (= choice "E")
+                                                         (do (println "You are trying to go east.")
+                                                             (go state :east)))))
+                                (= line "E") (do (println "You choose to examine") (building state))
+                                (= line "V") (do (showmap) state)
+                                (= line "C") (do (println "You choose to check your condition") (health state) state)
+                                (= line "Q") (do (println "Thanks for playing!") (assoc-in state [:student :win] -1)))))
 
 (defn repl [state]
   (loop [state state]
     (cond (= (get-in state [:student :progress]) 100) (println "YOU WON with the exam score" (get-in state [:student :inventory :exam]) ", MP score " (get-in state [:student :mp-score]) ", and honors Project score" (get-in state [:student :honors :project]))
           (= (get-in state [:student :win]) 0) (if (< (get-in state [:student :progress]) 100)
-                                                 (do (status state)
-                                                     (println "What do you want to do? ([M]ove/[E]xamine building/[C]heck your condition/[Q]uit) ")
-                                                     (let [command (read-line)]
-                                                       (recur (respond state command)))) (println "Game over"))
+                                                  ;;  (status state)
+                                                 (recur (respond (status state))) (println "Game over"))
           (= (get-in state [:student :win]) 1) (println "YOU WON!")
           (= (get-in state [:student :win]) -1) (println "YOU LOST!"))))
 
 (defn -main
   "Initialize the CS225."
   [& args]
-  (println "Welcome to the game of CS225. You play as a student who is taking CS225. You need to Push your MP and take your exam in order to win the game. 
-            There are also a lot of other things to do such as go to a bar, get some food, attend lecture. 
-            All of them can infect your productivity on MP and exam score. ") (repl init-state))
+  (println "Welcome to the game of CS225. You are a student who is taking CS225. You need to Push your MP and take your exam in order to pass the class (win the game). 
+            You have several indexes you need to keep up with: Welness, Food Point, Energy, Understanding, Pressure, Honors-understading.
+            There are a lot of other things to do such as go to a bar, get some food, attend lecture.
+            All these events can affect your indexes, which can infect your productivity on MP and exam score. 
+            Additionally, there is one mysterious spot at Altgeld Hall that may surprise you!
+            Good luck! Hope you pass this class!")
+  (println "")
+  (repl init-state))
 
 
 ;; (defn foo
