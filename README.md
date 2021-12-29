@@ -5,9 +5,8 @@ This is a text-based adventure game written in `Clojure` that simulates taking t
 To play the game: 
 1. Open up your terminal
 2. Change your directory to `adventure/src/adventure`.
-3. Run `lein repl` (You might need to install clojure environment)
-4. Run `(-main)`
-5. You are in the game! Have fun!
+3. Run `lein run` (You might need to install clojure environment)
+4. You are in the game! Have fun!
 
 Feel free to reach out for anything!
 
