@@ -10,5 +10,5 @@ To play the game:
 
 Feel free to reach out for anything!
 
----
+<!-- --- -->
 <!-- Declaration: This project is completely designed, created, and developed by me (Ruidi Huang) for the honors project of CS225 for the Fall 2021 semester. -->
