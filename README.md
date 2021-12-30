@@ -1,4 +1,4 @@
-# CS225-Simulation-Game
+# Course-Simulation-Game
 
 This is a text-based adventure game written in `Clojure` that simulates taking the class CS225 at UIUC, which is one of the best CS courses I have taken so far. 
 
